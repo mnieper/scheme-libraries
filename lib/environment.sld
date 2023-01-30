@@ -7,8 +7,7 @@
     (scheme base)
     (scheme case-lambda)
     (srfi 226 prompt)
-    (srfi 226 continuation)
-    (srfi 226 shift-reset))
+    (srfi 226 continuation))
   (begin
 
     (define-record-type <environment>
