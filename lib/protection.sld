@@ -1,8 +1,8 @@
-(define-library (environment)
+(define-library (protection)
   (export
-    make-environment
-    environment-make-variable
-    with-environment)
+    make-protection
+    protection-make-variable
+    with-protection)
   (import
     (scheme base)
     (scheme case-lambda)
@@ -10,20 +10,20 @@
     (srfi 226 continuation))
   (begin
 
-    (define-record-type <environment>
-      (%make-environment prompt-tag)
-      environment?
-      (prompt-tag environment-prompt-tag))
+    (define-record-type <protection>
+      (%make-protection prompt-tag)
+      protection?
+      (prompt-tag protection-prompt-tag))
 
-    (define (make-environment)
-      (%make-environment (make-continuation-prompt-tag)))
+    (define (make-protection)
+      (%make-protection (make-continuation-prompt-tag)))
 
-    (define environment-make-variable
+    (define protection-make-variable
       (case-lambda
-        ((environment default)
-         (environment-make-variable environment default values))
-        ((environment default filter)
-         (define prompt-tag (environment-prompt-tag environment))
+        ((protection default)
+         (protection-make-variable protection default values))
+        ((protection default filter)
+         (define prompt-tag (protection-prompt-tag protection))
          (define variable
            (case-lambda
              (()
@@ -44,8 +44,8 @@
                   (set! default (filter val))))))
          variable)))
 
-    (define (with-environment environment thunk)
-      (define prompt-tag (environment-prompt-tag environment))
+    (define (with-protection protection thunk)
+      (define prompt-tag (protection-prompt-tag protection))
       (let f ((thunk thunk) (state '()))
         (call-with-continuation-prompt
          thunk
