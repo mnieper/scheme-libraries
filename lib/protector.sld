@@ -1,8 +1,8 @@
-(define-library (protection)
+(define-library (protector)
   (export
-    make-protection
-    protection-make-variable
-    with-protection)
+    make-protector
+    protector-make-parameter
+    with-protector)
   (import
     (scheme base)
     (scheme case-lambda)
@@ -10,28 +10,28 @@
     (srfi 226 continuation))
   (begin
 
-    (define-record-type <protection>
-      (%make-protection prompt-tag)
-      protection?
-      (prompt-tag protection-prompt-tag))
+    (define-record-type <protector>
+      (%make-protector prompt-tag)
+      protector?
+      (prompt-tag protector-prompt-tag))
 
-    (define (make-protection)
-      (%make-protection (make-continuation-prompt-tag)))
+    (define (make-protector)
+      (%make-protector (make-continuation-prompt-tag)))
 
-    (define protection-make-variable
+    (define protector-make-parameter
       (case-lambda
-        ((protection default)
-         (protection-make-variable protection default values))
-        ((protection default filter)
-         (define prompt-tag (protection-prompt-tag protection))
-         (define variable
+        ((protector default)
+         (protector-make-parameter protector default values))
+        ((protector default filter)
+         (define prompt-tag (protector-prompt-tag protector))
+         (define parameter
            (case-lambda
              (()
               (if (continuation-prompt-available? prompt-tag)
                   (call-with-composable-continuation
                    (lambda (k)
                      (abort-current-continuation prompt-tag
-                       k variable))
+                       k parameter))
                    prompt-tag)
                   default))
              ((val)
@@ -39,13 +39,13 @@
                   (call-with-composable-continuation
                    (lambda (k)
                      (abort-current-continuation prompt-tag
-                       k variable (filter val)))
+                       k parameter (filter val)))
                    prompt-tag)
                   (set! default (filter val))))))
-         variable)))
+         parameter)))
 
-    (define (with-protection protection thunk)
-      (define prompt-tag (protection-prompt-tag protection))
+    (define (with-protector protector thunk)
+      (define prompt-tag (protector-prompt-tag protector))
       (let f ((thunk thunk) (state '()))
         (call-with-continuation-prompt
          thunk
@@ -67,9 +67,8 @@
                   (else
                    (cons (car state) (g (cdr state))))))))))))
 
-
-
-    ;; Local Variables:
-    ;; mode: scheme
-    ;; End:
     ))
+
+;; Local Variables:
+;; mode: scheme
+;; End:

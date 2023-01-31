@@ -1,17 +1,17 @@
 (import (scheme base)
         (scheme write)
-        (protection)
+        (protector)
         (chibi test))
 
-(test-begin "protection")
+(test-begin "protector")
 
-(define prot (make-protection))
+(define prot (make-protector))
 
-(define var1 (protection-make-variable prot 1))
+(define var1 (protector-make-parameter prot 1))
 
 (test 1 (var1))
 
-(define var2 (protection-make-variable prot 2))
+(define var2 (protector-make-parameter prot 2))
 
 (test 2 (var2))
 
@@ -21,11 +21,11 @@
 
 (test 2 (var2))
 
-(test 3 (with-protection prot
+(test 3 (with-protector prot
           (lambda ()
             (var1))))
 
-(test 4 (with-protection prot
+(test 4 (with-protector prot
           (lambda ()
             (var1 4)
             (var1))))
@@ -33,14 +33,14 @@
 (test 3 (var1))
 
 (test '(7 5)
-      (with-protection prot
+      (with-protector prot
         (lambda ()
           (var1 5)
           (list
-           (with-protection prot
+           (with-protector prot
              (lambda ()
                (var1 (+ (var1) 2))
                (var1)))
            (var1)))))
 
-(test-end "protection")
+(test-end "protector")
