@@ -1,5 +1,7 @@
 # Scheme Libraries
 
+This repository serves as a Scheme library incubator.
+
 ## Protector
 
 Protectors and protected parameters can be used to write pure effectful code.  They replace the environment monad and the procedural sublanguage introduced in SRFI 165.
