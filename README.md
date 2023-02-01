@@ -20,6 +20,22 @@ Consider the following definition of an accumulation procedure that takes a mapp
     count))
 ```
 
+(This example is not to show good programming style; for Scheme lists one would use `fold` instead of `for-each`, so think of a sequence type for which a `for-each` but not a `fold` is defined.)
+
+The procedure `accumulate` should be pure procedure but it isn't.  Through capturing a continuation during the dynamic extent of a call to `mapper`, the mutation of `count`, which should be an implementation detail, can be exposed.
+
+A correct implementation for `accumulate` uses liquids instead of variables:
+
+```scheme
+(define (accumulate mapper ls)
+  (let-liquid ((count 0))
+    (for-each 
+     (lambda (el)
+       (set! count (+ count (mapper el))))
+     ls)
+    count))
+```
+
 ### Library name
 
 `(liquid)`
@@ -53,35 +69,3 @@ Within the dynamic extent of the evaluation of `BODY`, capturing a continuation 
 `(define-liquid LIQUID EXPRESSION)`
 
 `LIQUID` is bound to a location whose initial value is given by `EXPRESSION`.
-
-## Protectors
-
-Protectors and protected parameters can be used to write pure effectful code.  They replace the environment monad and the procedural sublanguage introduced in SRFI 165.
-
-### Library name
-
-`(protector)`
-
-### Procedures
-
-`(make-protector)`
-
-Returns a new protector.
-
-`(protector-make-parameter PROTECTOR DEFAULT [FILTER])`
-
-Returns a new protected parameter, governed by `PROTECTOR` with initial value `DEFAULT` and `FILTER`.
-
-`(with-protector PROTECTOR THUNK)`
-
-Evaluates `THUNK` and returns the resulting values.  Within the dynamic extent of the call to `THUNK`, capturing a continuation also captures the values of all protected parameters governed by `PROTECTOR` and restores them when the continuation is reinstated.  When the call to `THUNK` returns, all protected parameters governed by `PROTECTOR` are restored to their values they had when `THUNK` was called.
-
-### Protected parameters
-
-`(PROTECTED-PARAMETER)`
-
-Returns the current value of the `PROTECTED-PARAMETER`.
-
-`(PROTECTED-PARAMETER VALUE)`
-
-Applies the protected parameter's filter to `VALUE` and makes the resulting value the current value of `PROTECTED-PARAMETER`.
