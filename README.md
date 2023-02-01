@@ -54,9 +54,13 @@ Within the dynamic extent of the evaluation of `BODY`, capturing a continuation 
 
 An expression consisting of a liquid is a liquid reference.  The value of the liquid reference is the value stored in the location to which the liquid is bound.
 
+It is an error if the current continuation up to the continuation of the most recent `liquid-let` or `let-liquid` involving `LIQUID` includes a continuation barrier.
+
 `(set! LIQUID EXPRESSION)`
 
 The EXPRESSION is evaluated, and the resulting value is stored in the location to which LIQUID is bound.
+
+It is an error if the current continuation up to the continuation of the most recent `liquid-let` or `let-liquid` involving `LIQUID` includes a continuation barrier.
 
 `(liquid-let ((LIQUID EXPRESSION) ...) BODY)`
 
