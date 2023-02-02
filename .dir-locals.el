@@ -1,8 +1,8 @@
 ((scheme-mode
   . ((eval
       . (progn
-          (put 'with-handler 'scheme-indent-function 2)
-          (put 'with-handlers 'scheme-indent-function 1)
+          (put 'handler 'scheme-indent-function 0)
+          (put 'with 'scheme-indent-function 1)
           (put 'reset 'scheme-indent-function 0)
           (put 'reset-at 'scheme-indent-function 1)
           (put 'shift 'scheme-indent-function 1)
@@ -24,6 +24,6 @@
 	     ("(\\(let-liquid\\)\\>" 1 font-lock-keyword-face)
 	     ("(\\(liquid-let\\)\\>" 1 font-lock-keyword-face)
 	     ("(\\(sequence-case\\)\\>" 1 font-lock-keyword-face)
-	     ("(\\(with-handler\\)\\>" 1 font-lock-keyword-face)
-	     ("(\\(with-handlers\\)\\>" 1 font-lock-keyword-face)
+	     ("(\\(with\\)\\>" 1 font-lock-keyword-face)
+	     ("(\\(handler\\)\\>" 1 font-lock-keyword-face)
 	     )))))))

@@ -1,8 +1,8 @@
 (define-library (effect)
   (export
     make-operation
-    with-handler
-    with-handlers)
+    handler
+    with)
   (import
     (scheme base)
     (srfi 226 prompt)
@@ -11,50 +11,67 @@
   (begin
     (define prompt-tag (make-continuation-prompt-tag 'effect))
 
-    (define-record-type <effect-type>
-      (%make-effect-type)
-      effect-type?
-      (name effect-type-name effect-type-set-name!))
+    (define-record-type <handler>
+      (%make-handler procedure)
+      handler?
+      (procedure handler-procedure))
 
     (define (make-operation)
-      (define op
-        (lambda arg*
-          (call-with-composable-continuation
-           (lambda (k)
-             (apply abort-current-continuation prompt-tag op k arg*))
-           prompt-tag)))
+      (define (op . arg*)
+        (call-with-composable-continuation
+         (lambda (k)
+           (abort-current-continuation prompt-tag
+             op k arg*))
+         prompt-tag))
       op)
 
-    (define-syntax with-handlers
-      (syntax-rules ()
-        ((with-handlers (((type k . arg*) e1 ... e2) ...) body1 ... body2)
-         (call-with-handlers (list (cons type (lambda (k . arg*) e1 ... e2)) ...) (lambda () body1 ... body2)))))
+    (define (return . arg*)
+      (abort-current-continuation prompt-tag
+        return (if #f #f) arg*))
 
-    (define-syntax with-handler
-      (syntax-rules ()
-        ((with-handler ((type k . arg*) e1 ... e2) body1 ... body2)
-         (with-handlers (((type k . arg*) e1 ... e2)) body1 ... body2))))
+    (define-syntax handler
+      (syntax-rules (else)
+        ((handler ((op k1 . arg1*) e1 ... e2) ... ((else . arg2*) e3 ... e4))
+         (make-handler (list (cons op (lambda (k1 . arg1*) e1 ... e2)) ...
+                             (cons return (lambda (k2 . arg2*) e3 ... e4)))))
+        ((handler ((op k . arg1*) e1 ... e2) ...)
+         (handler ((op k . arg1*) e1 ... e2) ...
+                  ((else . arg2*)
+                   (apply values arg2*))))))
 
-    (define (call-with-handlers clause* thunk)
-      (call-with-continuation-prompt
-       thunk
-       prompt-tag
-       (lambda (type k1 . arg*)
+    (define-syntax with
+      (syntax-rules ()
+        ((with handler body1 ... body2)
+         (call-with-handler handler (lambda () body1 ... body2)))))
+
+    (define (make-handler clause*)
+      (%make-handler
+       (lambda (loop op shallow-k arg*)
+         (define (k . val*)
+           (loop (lambda () (apply shallow-k val*))))
          (cond
-          ((assq type clause*)
+          ((assq op clause*)
            => (lambda (clause)
-                (apply (cdr clause) k1 arg*)))
+                (apply (cdr clause) k arg*)))
           (else
-           (call-with-composable-continuation
-            (lambda (k2)
-              (apply abort-current-continuation prompt-tag type (compose k2 k1) arg*))
-            prompt-tag))))))
+           (call-with-values
+               (lambda ()
+                 (apply op arg*))
+             k))))))
 
-    (define compose
-      (lambda (k2 k1)
-        (lambda arg*
-          (let-values ((arg* (apply k1 arg*)))
-            (apply k2 arg*))))))
+    (define (call-with-handler handler thunk)
+      (define proc (handler-procedure handler))
+      (let loop ((thunk thunk))
+        (call-with-continuation-prompt
+         (lambda ()
+           (call-with-values thunk return))
+         prompt-tag
+         (lambda (op k arg*)
+           (proc
+            loop
+            op
+            k
+            arg*))))))
 
   )
 
