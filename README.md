@@ -36,6 +36,8 @@ A correct implementation for `accumulate` uses liquids instead of variables:
     count))
 ```
 
+Another use case is an implementation of McCarthy's `amb` operator that is correct even in the presence of `call/cc`.  As long as only liquids are mutated, even mutation is transparent to `amb`.  An implementation of the operator can be found in the library `(amb)`.
+
 ### Library name
 
 `(liquid)`
