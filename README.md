@@ -2,6 +2,133 @@
 
 This repository serves as a Scheme library incubator.
 
+## Effects
+
+The effect library implements algebraic effect handlers, a contemporary view on delimited continuations.
+
+### Library name
+
+`(effect)`
+
+### Examples
+
+```scheme
+(define t1 (make-operation))
+(define t2 (make-operation))
+
+(test 1 (with (handler)
+          1))
+
+(test 2 (with (handler
+               ((t1 k) 2))
+          (t1)
+          1))
+
+(test 3 (with (handler
+                ((t1 k) 3))
+          (with (handler
+                  ((t2 k) 4))
+            (t1)
+            5)))
+
+(test 4 (with (handler
+                ((t1 k) 3))
+          (with (handler
+                  ((t2 k) 4))
+            (t2)
+            5)))
+
+(test 10 (with (handler
+                 ((t1 k x)
+                  (k x)))
+           (with (handler
+                   ((t2 k) 9))
+             (t1 10))))
+
+(test 11 (with (handler
+                ((t1 k x) (+ x 1))
+                ((t2 k x) (+ x 2)))
+           (t2 9)))
+
+(define get (make-operation))
+(define put (make-operation))
+
+(define state
+  (handler
+    ((get k)
+     (lambda (s)
+       ((k s) 12)))
+    ((put k x)
+     (lambda (_)
+       ((k (if #f #f)) x)))
+    ((else . arg*)
+     (lambda (s)
+       (apply values arg*)))))
+
+(test 10
+      ((with state
+         10)
+       0))
+
+(test 11
+      ((with state
+         (get))
+       11))
+
+(test 12
+      ((with state
+         (put (+ 1 (get)))
+         (get))
+       11))
+
+(define (collector x x!)
+  (let f ((ls '()))
+    (handler*
+      ((x k)
+       (with (f ls)
+         (k ls)))
+      ((x! k n)
+       (with (f (cons n ls))
+         (k (if #f #f)))))))
+
+(define collect! (make-operation))
+(define get-collection (make-operation))
+
+(test '(2 1)
+      (with (collector get-collection collect!)
+        (collect! 1)
+        (collect! 2)
+        (get-collection)))
+```
+
+### Syntax
+
+`(with <handler> <body>)`
+
+The `<handler>` expression is evaluated to obtain an effect handler, the `<body>` is evaluated and the values of its last expression are returned to the handler.  The handler is installed in the dynamic extent of the evaluation of the `<body>`.
+
+`(handler ((<op> <k> . <formals>) <body>) ...)
+`
+`(handler ((<op> <k> . <formals>) <body>) ... ((else . <formals>) <body>)`
+
+The `<ops>` must be expressions and the `<ks>` must be identifiers.  The first form is equivalent to `(handler ((<op> <k> . <formals>) <body>) ... ((else . VAL*) (apply values VAL*)))`.
+
+The `<ops>` are evaluated to obtain operations.  A handler that handles these operations is then returned.  The returned handler handles an operation with arguments list `VAL*` by creating a procedure `K` that, when called on arguments, calls the delimited continuation corresponding to the operation on the arguments.  During the dynamic extent of the call to the delimited continuation, the handler is installed.  The `<body>` corresponding to the operation is then evaluated with `<k>` bound to `K` and the `<formals>` bound to `VAL*` and the values of its last expression are returned.
+
+When values are returned to a handler, these are bound to the `<formals>` in the else clause, the corresponding `<body>` is evaluated and the values of its last expression are returned. 
+
+`(handler* ((<op> <k> . <formals>) <body>) ...)`
+
+`(handler* ((<op> <k> . <formals>) <body>) ... ((else . <formals>) <body>)`
+
+Like the respective `handler` forms except that the handler is not installed during the dynamic extent of the call to the delimited continuation corresponding to an operation being handled.  (Such handlers are also called *shallow effect handlers*.)
+
+### Procedures
+
+`(make-operation)`
+
+Returns a procedure, which is an operation.  When called on arguments, the current continuation is aborted to the nearest installed handler handling such an operation.  The discarded continuation frames form the delimited continuation corresponding to the operation.
+
 ## Liquids
 
 A `liquid` is an identifier naming a location.  Like a variable, a liquid can be mutated.  Contrary to variable assignments, assignments to liquids are pure in that the assignments are not exposed through `call/cc` as the following example shows.
