@@ -12,6 +12,26 @@ The effect library implements algebraic effect handlers, a contemporary view on 
 
 ### Examples
 
+An implementation of `make-coroutine-generator` with this library can look like:
+
+```scheme
+(define (make-coroutine-generator proc)
+  (define yield (make-operation))
+  (define (thunk)
+    (with (handler
+            ((yield k val)
+             (set! thunk k)
+             val)
+            ((else . ignore*)
+             (eof-object)))
+      (proc yield)))
+  (define (gen)
+    (thunk))
+  gen)
+```
+
+Here are various simple exampes.
+
 ```scheme
 (define t1 (make-operation))
 (define t2 (make-operation))
