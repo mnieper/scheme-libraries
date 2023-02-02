@@ -120,20 +120,17 @@
                                      coroutine->list))
 
     (define (coroutine->sequence co)
-      (define produce (make-operation))
-      (define stop (make-operation))
-      (define (yield . val*)
-        (apply produce val*))
+      (define yield (make-operation))
       (define select
         (let loop ((thunk (lambda () (co yield))))
           (lambda (success fail)
-            (with-handlers
-                (((produce k . val*)
-                  (apply success
-                         (loop k)
-                         val*))
-                 ((stop k)
-                  (fail)))
+            (with (handler*
+                    ((yield k . val*)
+                     (apply success
+                            (loop k)
+                            val*))
+                    ((else . ignore*)
+                     (fail)))
               (thunk)))))
       (make-sequence coroutine->sequence select))
 

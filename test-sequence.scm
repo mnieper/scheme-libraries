@@ -37,4 +37,17 @@
 (test '(1 2 3)
       (sequence->list seq))
 
+(define coseq
+  (coroutine->sequence
+   (lambda (yield)
+     (yield 1)
+     (yield 2)
+     (yield 3))))
+
+(test '(1 2 3)
+      (sequence->list seq))
+
+(test '(1 2 3)
+      (sequence->list seq))
+
 (test-end "sequence")
