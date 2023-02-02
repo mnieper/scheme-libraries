@@ -2,6 +2,7 @@
   . ((eval
       . (progn
           (put 'handler 'scheme-indent-function 0)
+          (put 'handler* 'scheme-indent-function 0)
           (put 'with 'scheme-indent-function 1)
           (put 'reset 'scheme-indent-function 0)
           (put 'reset-at 'scheme-indent-function 1)
@@ -26,4 +27,5 @@
 	     ("(\\(sequence-case\\)\\>" 1 font-lock-keyword-face)
 	     ("(\\(with\\)\\>" 1 font-lock-keyword-face)
 	     ("(\\(handler\\)\\>" 1 font-lock-keyword-face)
+	     ("(\\(handler\\*\\)\\>" 1 font-lock-keyword-face)
 	     )))))))

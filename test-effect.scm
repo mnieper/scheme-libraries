@@ -1,5 +1,5 @@
 (import (scheme base)
-        (effect)                  (scheme write)
+        (effect)
         (chibi test))
 
 (test-begin "effect")
@@ -71,5 +71,24 @@
          (put (+ 1 (get)))
          (get))
        11))
+
+(define (collector x x!)
+  (let f ((ls '()))
+    (handler*
+      ((x k)
+       (with (f ls)
+         (k ls)))
+      ((x! k n)
+       (with (f (cons n ls))
+         (k (if #f #f)))))))
+
+(define collect! (make-operation))
+(define get-collection (make-operation))
+
+(test '(2 1)
+      (with (collector get-collection collect!)
+        (collect! 1)
+        (collect! 2)
+        (get-collection)))
 
 (test-end "effect")

@@ -2,6 +2,7 @@
   (export
     make-operation
     handler
+    handler*
     with)
   (import
     (scheme base)
@@ -39,6 +40,16 @@
                   ((else . arg2*)
                    (apply values arg2*))))))
 
+    (define-syntax handler*
+      (syntax-rules (else)
+        ((handler ((op k1 . arg1*) e1 ... e2) ... ((else . arg2*) e3 ... e4))
+         (make-handler* (list (cons op (lambda (k1 . arg1*) e1 ... e2)) ...
+                             (cons return (lambda (k2 . arg2*) e3 ... e4)))))
+        ((handler* ((op k . arg1*) e1 ... e2) ...)
+         (handler* ((op k . arg1*) e1 ... e2) ...
+                  ((else . arg2*)
+                   (apply values arg2*))))))
+
     (define-syntax with
       (syntax-rules ()
         ((with handler body1 ... body2)
@@ -49,6 +60,19 @@
        (lambda (loop op shallow-k arg*)
          (define (k . val*)
            (loop (lambda () (apply shallow-k val*))))
+         (cond
+          ((assq op clause*)
+           => (lambda (clause)
+                (apply (cdr clause) k arg*)))
+          (else
+           (call-with-values
+               (lambda ()
+                 (apply op arg*))
+             k))))))
+
+    (define (make-handler* clause*)
+      (%make-handler
+       (lambda (loop op k arg*)
          (cond
           ((assq op clause*)
            => (lambda (clause)
