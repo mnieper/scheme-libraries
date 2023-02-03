@@ -1,0 +1,15 @@
+* Sequences
+
+The ~(sequence)~ library provides a set of operations on a sequence.
+A /sequence/ is a data structure that is a finite or infinite list of
+entries.  Each entry is represented by multiple Scheme values.
+
+To be precise, a sequence is either empty or it has a /head/ and a
+/tail/.  The head is represented by multiple Scheme values and the
+tail is again a sequence.  The entries of a sequence are defined as
+follows: The empty sequence has no entries.  A non-empty sequence has
+as its entries its head and the entries of its tail.  This defines an
+order on the entries of a sequence.
+
+Most sequences in practice are single-valued, which are sequences
+where each entry is represented by a single Scheme value.
