@@ -5,11 +5,14 @@
     list->sequence
     coroutine->sequence
     generator->sequence
+    loop->sequence
     sequence->list
     sequence-select
     sequence-for-each
     sequence-fold
-    sequence-case)
+    sequence-case
+    sequence-null
+    sequence-null?)
   (import
     (scheme base)
     (srfi 111)
@@ -134,7 +137,7 @@
                     ((else . ignore*)
                      (fail)))
               (thunk)))))
-      (make-sequence coroutine->sequence select))
+      (make-sequence coroutine-type-descriptor select))
 
     ;; Generators as sequences
 
@@ -189,6 +192,11 @@
 
     (define sequence-null
       (make-sequence list-type-descriptor '()))
+
+    (define (loop->sequence for-each)
+      (coroutine->sequence
+       (lambda (yield)
+         (for-each yield))))
 
     ;; Predicates
 

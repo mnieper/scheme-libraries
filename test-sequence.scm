@@ -45,10 +45,10 @@
      (yield 3))))
 
 (test '(1 2 3)
-      (sequence->list seq))
+      (sequence->list coseq))
 
 (test '(1 2 3)
-      (sequence->list seq))
+      (sequence->list coseq))
 
 (define (make-generator n)
   (define i 0)
@@ -64,6 +64,16 @@
 
 (test '(0 1 2)
       (sequence->list seq))
+
+(define (loop proc)
+  (for-each proc '(1 2 3)))
+
+(define loop-seq (loop->sequence loop))
+
+(test #f (sequence-null? loop-seq))
+
+(test '(1 2 3)
+      (sequence->list loop-seq))
 
 (test-error (sequence->list seq))
 
