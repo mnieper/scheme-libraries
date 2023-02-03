@@ -65,6 +65,8 @@
 (test '(0 1 2)
       (sequence->list seq))
 
+(test-error (sequence->list seq))
+
 (define (loop proc)
   (for-each proc '(1 2 3)))
 
@@ -74,7 +76,5 @@
 
 (test '(1 2 3)
       (sequence->list loop-seq))
-
-(test-error (sequence->list seq))
 
 (test-end "sequence")
