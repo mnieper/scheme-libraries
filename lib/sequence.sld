@@ -4,6 +4,7 @@
     sequence-null
     list->sequence
     coroutine->sequence
+    generator->sequence
     sequence->list
     sequence-select
     sequence-for-each
@@ -11,6 +12,7 @@
     sequence-case)
   (import
     (scheme base)
+    (srfi 111)
     (srfi 226 prompt)
     (srfi 226 continuation)
     (effect)
@@ -133,6 +135,55 @@
                      (fail)))
               (thunk)))))
       (make-sequence coroutine->sequence select))
+
+    ;; Generators as sequences
+
+    (define (steal-generator! box)
+      (define gen (unbox box))
+      (unless gen
+        (error "cannot restart"))
+      (set-box! box #f)
+      gen)
+
+    (define (generator-select box success failure)
+      (define gen (steal-generator! box))
+      (define el (gen))
+      (if (eof-object? el)
+          (failure)
+          (success (generator->sequence gen) el)))
+
+    (define (generator-for-each box proc)
+      (define gen (steal-generator! box))
+      (let loop ()
+        (define el (gen))
+        (unless (eof-object? el)
+          (proc el)
+          (loop))))
+
+    (define (generator-fold box proc nil)
+      (define gen (steal-generator! box))
+      (let loop ((nil nil))
+        (define el (gen))
+        (if (eof-object? el)
+            nil
+            (loop (proc nil el)))))
+
+    (define (generator->list box)
+      (define gen (steal-generator! box))
+      (let loop ()
+        (define el (gen))
+        (if (eof-object? el)
+            '()
+            (cons el (loop)))))
+
+    (define generator-type-descriptor
+      (make-sequence-type-descriptor generator-select
+                                     generator-for-each
+                                     generator-fold
+                                     generator->list))
+
+    (define (generator->sequence gen)
+      (make-sequence generator-type-descriptor (box gen)))
 
     ;; Constructors
 

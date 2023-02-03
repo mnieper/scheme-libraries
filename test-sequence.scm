@@ -50,4 +50,21 @@
 (test '(1 2 3)
       (sequence->list seq))
 
+(define (make-generator n)
+  (define i 0)
+  (lambda ()
+    (if (= i n)
+        (eof-object)
+        (let ((res i))
+          (set! i (+ i 1))
+          res))))
+
+(define gen (make-generator 3))
+(define seq (generator->sequence gen))
+
+(test '(0 1 2)
+      (sequence->list seq))
+
+(test-error (sequence->list seq))
+
 (test-end "sequence")
