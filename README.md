@@ -33,8 +33,11 @@ An implementation of `make-coroutine-generator` with this library can look like:
 Here are various simple exampes.
 
 ```scheme
-(define t1 (make-operation))
-(define t2 (make-operation))
+
+(define (fail . arg*) (error "no handler found"))
+
+(define t1 (make-operation fail))
+(define t2 (make-operation fail))
 
 (test 1 (with (handler)
           1))
@@ -70,8 +73,8 @@ Here are various simple exampes.
                 ((t2 k x) (+ x 2)))
            (t2 9)))
 
-(define get (make-operation))
-(define put (make-operation))
+(define get (make-operation fail))
+(define put (make-operation fail))
 
 (define state
   (handler
@@ -111,14 +114,33 @@ Here are various simple exampes.
        (with (f (cons n ls))
          (k (if #f #f)))))))
 
-(define collect! (make-operation))
-(define get-collection (make-operation))
+(define collect! (make-operation fail))
+(define get-collection (make-operation fail))
 
 (test '(2 1)
       (with (collector get-collection collect!)
         (collect! 1)
         (collect! 2)
         (get-collection)))
+
+(define count 0)
+(define-operation (add! n)
+  (set! count (+ count n)))
+
+(test '3
+      (begin
+        (add! 3)
+        count))
+
+(test '(4 3)
+      (let ((c 0))
+        (with
+            (handler
+              ((add! k n)
+               (set! c (+ c n))
+               (k)))
+          (add! 4)
+          (list c count))))
 ```
 
 ### Syntax
@@ -135,7 +157,7 @@ The `<ops>` must be expressions and the `<ks>` must be identifiers.  The first f
 
 The `<ops>` are evaluated to obtain operations.  A handler that handles these operations is then returned.  The returned handler handles an operation with arguments list `VAL*` by creating a procedure `K` that, when called on arguments, calls the delimited continuation corresponding to the operation on the arguments.  During the dynamic extent of the call to the delimited continuation, the handler is installed.  The `<body>` corresponding to the operation is then evaluated with `<k>` bound to `K` and the `<formals>` bound to `VAL*` and the values of its last expression are returned.
 
-When values are returned to a handler, these are bound to the `<formals>` in the else clause, the corresponding `<body>` is evaluated and the values of its last expression are returned. 
+When values are returned to a handler, these are bound to the `<formals>` in the else clause, the corresponding `<body>` is evaluated and the values of its last expression are returned.
 
 `(handler* ((<op> <k> . <formals>) <body>) ...)`
 
@@ -143,11 +165,23 @@ When values are returned to a handler, these are bound to the `<formals>` in the
 
 Like the respective `handler` forms except that the handler is not installed during the dynamic extent of the call to the delimited continuation corresponding to an operation being handled.  (Such handlers are also called *shallow effect handlers*.)
 
+`(define-operation <identifier> <expression>)`
+
+Equivalent to `(define <identifier> (make-operation <expression>))`.
+
+`(define-operation (<identifier> . <formals>) <body>)`
+
+Equivalent to `(define-operation <identifier> (lambda <formals> <body>))`.
+
 ### Procedures
 
-`(make-operation)`
+`(make-operation default)`
 
 Returns a procedure, which is an operation.  When called on arguments, the current continuation is aborted to the nearest installed handler handling such an operation.  The discarded continuation frames form the delimited continuation corresponding to the operation.
+
+If there is no installed handler handling such an operation, the
+argument default, which must be a procedure, is tail-called on the
+arguments instead.
 
 ## Liquids
 
@@ -160,7 +194,7 @@ Consider the following definition of an accumulation procedure that takes a mapp
 ```scheme
 (define (accumulate mapper ls)
   (let ((count 0))
-    (for-each 
+    (for-each
      (lambda (el)
        (set! count (+ count (mapper el))))
      ls)
@@ -176,7 +210,7 @@ A correct implementation for `accumulate` uses liquids instead of variables:
 ```scheme
 (define (accumulate mapper ls)
   (let-liquid ((count 0))
-    (for-each 
+    (for-each
      (lambda (el)
        (set! count (+ count (mapper el))))
      ls)
@@ -193,7 +227,7 @@ Another use case is an implementation of McCarthy's `amb` operator that is corre
 
 `(let-liquid ((LIQUID INIT) ...) BODY)`
 
-The `INIT`s are evaluated in the current environment (in some unspecified order), the `LIQUID`s are bound to fresh locations holding the results, the `BODY` is evaluated in the extended environment, and the values of the last expression of `BODY` are returned.  Each binding of a `LIQUID` has `BODY` as its region. 
+The `INIT`s are evaluated in the current environment (in some unspecified order), the `LIQUID`s are bound to fresh locations holding the results, the `BODY` is evaluated in the extended environment, and the values of the last expression of `BODY` are returned.  Each binding of a `LIQUID` has `BODY` as its region.
 
 Within the dynamic extent of the evaluation of `BODY`, capturing a continuation also captures the current values of the `LIQUID`s and restores them when the continuation is reinstated.
 
