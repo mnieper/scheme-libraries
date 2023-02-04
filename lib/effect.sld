@@ -1,5 +1,6 @@
 (define-library (effect)
   (export
+    define-operation
     make-operation
     handler
     handler*
@@ -17,14 +18,23 @@
       handler?
       (procedure handler-procedure))
 
-    (define (make-operation)
+    (define (make-operation proc)
       (define (op . arg*)
-        (call-with-composable-continuation
-         (lambda (k)
-           (abort-current-continuation prompt-tag
-             op k arg*))
-         prompt-tag))
+        (if (continuation-prompt-available? prompt-tag)
+            (call-with-composable-continuation
+             (lambda (k)
+               (abort-current-continuation prompt-tag
+                 op k arg*))
+             prompt-tag)
+            (apply proc arg*)))
       op)
+
+    (define-syntax define-operation
+      (syntax-rules ()
+        ((define-operation (name . arg*) body1 ... body2)
+         (define name (make-operation (lambda arg* body1 ... body2))))
+        ((define-operation name proc)
+         (define name (make-operation proc)))))
 
     (define (return . arg*)
       (abort-current-continuation prompt-tag

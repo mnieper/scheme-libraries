@@ -14,7 +14,7 @@
 	  (put 'let-liquid 'scheme-indent-function 1)
           (font-lock-add-keywords
            nil
-           '(("(\\(define-liquid\\)\\>[ \t]*(*\\(\\sw+\\)?"
+           '(("(\\(define-liquid\\|define-operation\\)\\>[ \t]*(*\\(\\sw+\\)?"
               (1 font-lock-keyword-face)
               (3 font-lock-function-name-face nil t))
 	     ("(\\(reset\\)\\>" 1 font-lock-keyword-face)

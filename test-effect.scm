@@ -4,8 +4,11 @@
 
 (test-begin "effect")
 
-(define t1 (make-operation))
-(define t2 (make-operation))
+(define (fail . arg*)
+  (error "no handler available"))
+
+(define t1 (make-operation fail))
+(define t2 (make-operation fail))
 
 (test 1 (with (handler)
           1))
@@ -41,8 +44,8 @@
                 ((t2 k x) (+ x 2)))
            (t2 9)))
 
-(define get (make-operation))
-(define put (make-operation))
+(define get (make-operation fail))
+(define put (make-operation fail))
 
 (define state
   (handler
@@ -82,13 +85,32 @@
        (with (f (cons n ls))
          (k (if #f #f)))))))
 
-(define collect! (make-operation))
-(define get-collection (make-operation))
+(define collect! (make-operation fail))
+(define get-collection (make-operation fail))
 
 (test '(2 1)
       (with (collector get-collection collect!)
         (collect! 1)
         (collect! 2)
         (get-collection)))
+
+(define count 0)
+(define-operation (add! n)
+  (set! count (+ count n)))
+
+(test '3
+      (begin
+        (add! 3)
+        count))
+
+(test '(4 3)
+      (let ((c 0))
+        (with
+            (handler
+              ((add! k n)
+               (set! c (+ c n))
+               (k)))
+          (add! 4)
+          (list c count))))
 
 (test-end "effect")
